@@ -1,0 +1,19 @@
+# --- Data Foundation & ML ---
+yfinance
+pandas
+numpy
+scikit-learn
+xgboost
+torch
+
+# --- Agentic Reasoning ---
+langchain
+langgraph
+langchain-openai 
+
+# --- Backend & Caching ---
+fastapi
+uvicorn
+redis
+langchain-redis 
+python-dotenv
