@@ -71,3 +71,4 @@ websockets==16.1.1
 xxhash==4.0.1
 yfinance==1.7.0
 zstandard==0.25.0
+zstandard==0.25.0
