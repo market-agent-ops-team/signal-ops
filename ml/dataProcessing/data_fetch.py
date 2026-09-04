@@ -1,6 +1,7 @@
 import yfinance as yf
 import pandas as pd
 import logging
+
  
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -55,9 +56,9 @@ def ohlcv_validation(
         "row_missing_pct": row_missing_pct,
         "col_missing_pct": col_missing_pct,
         "max_consecutive_gap_days": max_gap,
-        "zero_volume_days": int((df["volume"] == 0).sum()),
-        "duplicate_dates": int(df["date"].duplicated().sum()),
-        "sorted": bool(df["date"].is_monotonic_increasing),
+        "zero_volume_days": (df["volume"] == 0).sum(),
+        "duplicate_dates": df["date"].duplicated().sum(),
+        "sorted": df["date"].is_monotonic_increasing,
     }
  
     report["ok"] = (
