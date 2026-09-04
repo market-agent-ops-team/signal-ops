@@ -1,5 +1,7 @@
 from typing import List, Dict, Any, TypedDict
 from langgraph.graph import StateGraph,END,START
+from agents.researcher_agent import news_research_node
+from agents.editor_agent import editor_node
 
 class MarketState(TypedDict):
     ticker:str
@@ -22,16 +24,7 @@ def technical_research_node(state:MarketState):
         "ml_confidence":0.9
     }
 
-def news_research_node(state:MarketState):
-    return{
-        "news_items":[
-            {
-                "title": "",
-                "content": "",
-            }
-        ],
-        "news_sentiments":"neutral"
-    }
+
 
 def analyst_node(state:MarketState):
     return{
@@ -39,19 +32,7 @@ def analyst_node(state:MarketState):
         "analyst_reasoning":""
     }
 
-def editor_node(state:MarketState):
-    return{
-        "final_report":f"""
-        MARKET ANALYSIS REPORT
-        Ticker: {state['ticker']}
-        Target Date: {state['target_date']}
-        ML Trend: {state['ml_trend']} ({state['ml_confidence']:.2f})
-        News Sentiments: {state['news_sentiments']}
-        News Items: {state['news_items']}
-        Divergence Detected: {state['divergence_flag']}
-        Analyst Reasoning: {state['analyst_reasoning']}
-        """
-    }
+
 
 
 workflow = StateGraph(MarketState) # pyrefly: ignore[bad-specialization]
