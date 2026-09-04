@@ -17,3 +17,5 @@ uvicorn
 redis
 langchain-redis 
 python-dotenv
+requests
+vaderSentiment
