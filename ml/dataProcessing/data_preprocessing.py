@@ -18,7 +18,7 @@ def drop_badtickers(combined:pd.DataFrame,reports:list[dict])->pd.DataFrame:
   filtered = combined[combined["ticker"].isin(good_formatted)].copy()
   return filtered
 
-def fill_small_gaps(df: pd.DataFrame) -> pd.DataFrame:
+def small_gap_skip(df: pd.DataFrame) -> pd.DataFrame:
     df = df.sort_values(["ticker", "date"]).copy()
 
     value_cols = ["open", "high", "low", "close", "volume"]
@@ -54,7 +54,7 @@ def chronological_split(df: pd.DataFrame,train_frac: float = 0.7,val_frac: float
 
 def preprocess(combined:pd.DataFrame,reports:list[dict],training_frac:float=0.7,validation_frac:float=0.20)->tuple[pd.DataFrame,pd.DataFrame,pd.DataFrame]:
     clean = drop_badtickers(combined, reports)
-    clean = fill_small_gaps(clean)
+    clean = small_gap_skip(clean)
     train_df, val_df, test_df = chronological_split(clean, training_frac, validation_frac)
  
     logger.info(
