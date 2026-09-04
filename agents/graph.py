@@ -1,8 +1,7 @@
-from typing import TypedDict,List,Dict,Any
+from typing import List, Dict, Any, TypedDict
 from langgraph.graph import StateGraph,END,START
 
 class MarketState(TypedDict):
-    #input
     ticker:str
     target_date:str
 
@@ -54,7 +53,8 @@ def editor_node(state:MarketState):
         """
     }
 
-workflow = StateGraph(MarketState)
+
+workflow = StateGraph(MarketState) # pyrefly: ignore[bad-specialization]
 
 workflow.add_node("technical_research",technical_research_node)
 workflow.add_node("news_research",news_research_node)
