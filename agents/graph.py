@@ -1,4 +1,4 @@
-from typing import Dict, List, TypedDict
+from typing import List, Dict, Any, TypedDict
 from langgraph.graph import StateGraph,END,START
 from agents.analyst_agent import analyst_node
 from agents.researcher_agent import news_research_node
@@ -23,7 +23,8 @@ class MarketState(TypedDict):
 def technical_research_node(state:MarketState):
     return predict_trend(state["ticker"], state["target_date"])
 
-workflow = StateGraph(MarketState)
+
+workflow = StateGraph(MarketState) # pyrefly: ignore[bad-specialization]
 
 workflow.add_node("technical_research",technical_research_node)
 workflow.add_node("news_research",news_research_node)
