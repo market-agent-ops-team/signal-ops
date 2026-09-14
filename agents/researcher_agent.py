@@ -1,6 +1,7 @@
 import os
 import requests
 import logging
+import re
 
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
@@ -27,37 +28,42 @@ TICKER_MAP = {
 }
 
 
+def normalize_ticker(ticker: str) -> str:
+    normalized = ticker.strip().upper().removesuffix(".NS")
+    if not re.fullmatch(r"[A-Z0-9][A-Z0-9&-]{0,29}", normalized):
+        raise ValueError("Ticker must be an NSE symbol, optionally ending in .NS")
+    return normalized
+
+
+def validate_target_date(target_date: str) -> str:
+    if not re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}", target_date):
+        raise ValueError("target_date must use YYYY-MM-DD format")
+    datetime.strptime(target_date, "%Y-%m-%d")
+    return target_date
+
+
 def get_company_name(ticker: str) -> str:
-    ticker = ticker.strip().upper()
-
-    if not ticker.endswith((".NS", ".BO")):
-        ticker += ".NS"
-
-    return TICKER_MAP.get(
-        ticker,
-        ticker.replace(".NS", "").replace(".BO", "")
-    )
+    normalized = normalize_ticker(ticker)
+    return TICKER_MAP.get(normalized + ".NS", normalized)
 
 
 def fetch_news(
     company_name: str,
     target_date: str,
     max_articles: int = 10,
-) -> list[dict]:
+) -> list[dict] | None:
 
+    validate_target_date(target_date)
     if not company_name or not company_name.strip():
-        logger.warning(
-            "Empty company name provided. Returning empty news."
-        )
-        return []
+        raise ValueError("Company name cannot be empty")
 
     api_key = os.getenv("NEWS_API_KEY")
 
     if not api_key:
         logger.warning(
-            "NEWS_API_KEY not found in .env. Returning empty news."
+            "News unavailable: missing API key."
         )
-        return []
+        return None
 
     try:
         analysis_date = datetime.strptime(
@@ -100,33 +106,43 @@ def fetch_news(
 
         resp.raise_for_status()
 
-        raw_articles = (
-            resp.json().get("articles") or []
-        )
+        payload = resp.json()
+        if not isinstance(payload, dict) or payload.get("status") != "ok" or not isinstance(payload.get("articles"), list):
+            logger.warning("News unavailable: invalid response schema.")
+            return None
+        raw_articles = payload["articles"]
 
         company_lower = company_name.lower()
         articles = []
+        valid_items = 0
 
         for article in raw_articles:
+            if not isinstance(article, dict):
+                continue
+            if any(article.get(key) is not None and not isinstance(article[key], str)
+                   for key in ("title", "description", "publishedAt")):
+                continue
             title = article.get("title") or ""
             description = article.get("description") or ""
+            if not (title.strip() or description.strip()):
+                continue
+            valid_items += 1
 
             searchable_text = (
                 title + " " + description
             ).lower()
 
-            # Keep only articles that directly mention the company
             if company_lower not in searchable_text:
                 continue
+
+            source = article.get("source")
+            source_name = source.get("name") if isinstance(source, dict) else None
 
             articles.append(
                 {
                     "title": title or "No title",
                     "content": description[:200],
-                    "source": (
-                        article.get("source", {})
-                        .get("name", "Unknown")
-                    ),
+                    "source": source_name if isinstance(source_name, str) and source_name.strip() else "Unknown",
                     "date": (
                         article.get("publishedAt")
                         or ""
@@ -137,49 +153,14 @@ def fetch_news(
             if len(articles) >= max_articles:
                 break
 
+        if raw_articles and not valid_items:
+            logger.warning("News unavailable: no valid article records.")
+            return None
         return articles
 
-    except requests.exceptions.Timeout:
-        logger.warning(
-            f"NewsAPI request timed out for "
-            f"'{company_name}'"
-        )
-        return []
-
-    except requests.exceptions.HTTPError as exc:
-        logger.warning(
-            f"NewsAPI HTTP error for "
-            f"'{company_name}': {exc}"
-        )
-        return []
-
-    except Exception as exc:
-        logger.warning(
-            f"NewsAPI unexpected error for "
-            f"'{company_name}': {exc}"
-        )
-        return []
-
-    except requests.exceptions.Timeout:
-        logger.warning(
-            f"NewsAPI request timed out for "
-            f"'{company_name}'"
-        )
-        return []
-
-    except requests.exceptions.HTTPError as exc:
-        logger.warning(
-            f"NewsAPI HTTP error for "
-            f"'{company_name}': {exc}"
-        )
-        return []
-
-    except Exception as exc:
-        logger.warning(
-            f"NewsAPI unexpected error for "
-            f"'{company_name}': {exc}"
-        )
-        return []
+    except (requests.exceptions.RequestException, ValueError):
+        logger.warning("News unavailable: request or JSON decoding failed.")
+        return None
 
 
 def classify_sentiment(
@@ -242,17 +223,6 @@ def news_research_node(state: dict) -> dict:
     ticker = state.get("ticker", "")
     target_date = state.get("target_date", "")
 
-    if not ticker or not ticker.strip():
-        logger.error(
-            "[Researcher] Empty ticker received. "
-            "Defaulting to neutral state."
-        )
-
-        return {
-            "news_items": [],
-            "news_sentiments": "neutral",
-        }
-
     if not target_date:
         raise ValueError(
             "target_date is required for news research"
@@ -271,6 +241,11 @@ def news_research_node(state: dict) -> dict:
         target_date,
     )
 
+    if articles is None:
+        return {"news_items": [], "news_sentiments": None, "news_status": "unavailable"}
+    if not articles:
+        return {"news_items": [], "news_sentiments": None, "news_status": "empty"}
+
     articles = classify_sentiment(articles)
 
     overall = aggregate_sentiment(articles)
@@ -283,6 +258,7 @@ def news_research_node(state: dict) -> dict:
     return {
         "news_items": articles,
         "news_sentiments": overall,
+        "news_status": "available",
     }
 
 

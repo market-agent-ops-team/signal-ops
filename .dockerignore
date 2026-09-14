@@ -1,0 +1,13 @@
+.git
+.github
+venv
+.venv
+__pycache__
+.pytest_cache
+.pyrefly_cache
+*.pyc
+.env
+*.ipynb
+notebooks
+reports
+ml/candidate_models

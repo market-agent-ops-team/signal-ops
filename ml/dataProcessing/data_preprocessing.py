@@ -34,23 +34,14 @@ def small_gap_skip(df: pd.DataFrame) -> pd.DataFrame:
     return df.reset_index(drop=True)
 
 def chronological_split(df: pd.DataFrame,train_frac: float = 0.7,val_frac: float = 0.20,) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-  
-    train_parts, val_parts, test_parts = [], [], []
- 
-    for ticker, group in df.groupby("ticker"):
-        group = group.sort_values("date").reset_index(drop=True)
-        n = len(group)
- 
-        train_end = int(n * train_frac)
-        val_end = train_end + int(n * val_frac)
- 
-        train_parts.append(group.iloc[:train_end])
-        val_parts.append(group.iloc[train_end:val_end])
-        test_parts.append(group.iloc[val_end:])
- 
-    train_df = pd.concat(train_parts, ignore_index=True)
-    val_df = pd.concat(val_parts, ignore_index=True)
-    test_df = pd.concat(test_parts, ignore_index=True)
+    df = df.sort_values(["ticker", "date"])
+    dates = df["date"].drop_duplicates().sort_values()
+    train_end = int(len(dates) * train_frac)
+    val_end = train_end + int(len(dates) * val_frac)
+
+    train_df = df[df["date"].isin(dates.iloc[:train_end])].reset_index(drop=True)
+    val_df = df[df["date"].isin(dates.iloc[train_end:val_end])].reset_index(drop=True)
+    test_df = df[df["date"].isin(dates.iloc[val_end:])].reset_index(drop=True)
  
     return train_df, val_df, test_df
 
@@ -74,13 +65,17 @@ def purge_split_boundary(df: pd.DataFrame, horizon_days: int = 3) -> pd.DataFram
     future prices that belong to the next split.
     """
 
+    if horizon_days < 0:
+        raise ValueError("horizon_days must be non-negative")
+    if df.empty or horizon_days == 0:
+        return df.copy()
+
     parts = []
 
     for ticker, group in df.groupby("ticker"):
         group = group.sort_values("date").reset_index(drop=True)
 
-        if len(group) > horizon_days:
-            group = group.iloc[:-horizon_days]
+        group = group.iloc[:-horizon_days]
 
         parts.append(group)
 
@@ -98,4 +93,3 @@ if __name__ == "__main__":
     print("Train:", train_df.shape, train_df["date"].min(), "to", train_df["date"].max())
     print("Val:  ", val_df.shape, val_df["date"].min(), "to", val_df["date"].max())
     print("Test: ", test_df.shape, test_df["date"].min(), "to", test_df["date"].max())
- 

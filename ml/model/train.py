@@ -1,5 +1,6 @@
 # ml/model/train.py
 import os
+import json
 import joblib
 import numpy as np
 import pandas as pd
@@ -87,9 +88,12 @@ def train_xgboost(
     return model
 
 
-def save_artifacts(model: XGBClassifier, scaler: StandardScaler, output_dir: str = "ml/saved_models"):
+def save_artifacts(model: XGBClassifier, scaler: StandardScaler, output_dir: str = "ml/saved_models", *, metrics: dict | None = None):
     os.makedirs(output_dir, exist_ok=True)
     joblib.dump(model, os.path.join(output_dir, "xgb_model.joblib"))
     joblib.dump(scaler, os.path.join(output_dir, "scaler.joblib"))
     joblib.dump(FEATURE_COLS, os.path.join(output_dir, "feature_names.joblib"))
+    if metrics is not None:
+        with open(os.path.join(output_dir, "metrics.json"), "w", encoding="utf-8") as file:
+            json.dump(metrics, file, indent=2, allow_nan=False)
     print(f"Artifacts successfully saved to {output_dir}/")
