@@ -2,6 +2,7 @@ import pandas as pd
 import logging 
 from ml.dataProcessing.data_fetch import fetch_grp
 
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -65,6 +66,25 @@ def preprocess(combined:pd.DataFrame,reports:list[dict],training_frac:float=0.7,
  
     return train_df, val_df, test_df
 
+def purge_split_boundary(df: pd.DataFrame, horizon_days: int = 3) -> pd.DataFrame:
+    """
+    Removes the last `horizon_days` rows from each ticker.
+
+    This prevents labels near a train/validation boundary from using
+    future prices that belong to the next split.
+    """
+
+    parts = []
+
+    for ticker, group in df.groupby("ticker"):
+        group = group.sort_values("date").reset_index(drop=True)
+
+        if len(group) > horizon_days:
+            group = group.iloc[:-horizon_days]
+
+        parts.append(group)
+
+    return pd.concat(parts, ignore_index=True)
 
 
 

@@ -11,8 +11,8 @@ def evaluate_predictions(y_true: pd.Series, y_pred: pd.Series, title: str = "Bas
     macro_f1 = f1_score(y_true, y_pred, average="macro", zero_division=0)
 
     print(f"\n================ {title} Evaluation ================")
-    print(f"Accuracy : {acc:.4f}")
-    print(f"Macro F1 : {macro_f1:.4f}")
+    print(f"Accuracy : {acc:.4f} ({acc * 100:.2f}%)")
+    print(f"Macro F1 : {macro_f1:.4f} ({macro_f1 * 100:.2f}%)")
     print("\nDetailed Classification Report:")
     print(
         classification_report(
@@ -25,35 +25,133 @@ def evaluate_predictions(y_true: pd.Series, y_pred: pd.Series, title: str = "Bas
 
     return {"accuracy": acc, "macro_f1": macro_f1}
 
+def evaluate_xgboost(model, X_test, y_test):
+    y_pred = model.predict(X_test)
 
-def run_baselines(val_df: pd.DataFrame, lookback_days: int = 3):
+    print("\nXGBoost Prediction Distribution:")
+    unique, counts = np.unique(y_pred, return_counts=True)
+
+    for label, count in zip(unique, counts):
+        print(f"Class {label}: {count}")
+
+    return evaluate_predictions(
+        y_test,
+        y_pred,
+        title="XGBoost Model"
+    )
+
+def run_baselines(
+    train_df: pd.DataFrame,
+    eval_df: pd.DataFrame,
+    history_df: pd.DataFrame,
+    lookback_days: int = 3
+):
     """
-    Computes two baselines on the validation set:
-    1. Majority Class: Always predicts the most common class in validation.
-    2. Momentum / Persistence: Assumes past N-day direction continues for next N days.
+    Evaluates majority-class and momentum baselines.
+
+    train_df:
+        Used to determine the majority class.
+
+    eval_df:
+        Dataset on which baseline performance is measured.
+
+    history_df:
+        Previous chronological split used to provide price history
+        for the first few rows of eval_df.
     """
-    y_true = val_df["target"]
+
+    y_true = eval_df["target"].reset_index(drop=True)
 
     # 1. Majority Class Baseline
-    majority_class = y_true.mode()[0]
-    y_pred_majority = pd.Series(majority_class, index=val_df.index)
-    evaluate_predictions(y_true, y_pred_majority, title="Majority Class Baseline")
+    majority_class = train_df["target"].mode()[0]
 
-    # 2. Momentum / Persistence Baseline
-    past_return = (val_df["close"] - val_df["close"].shift(lookback_days)) / (
-        val_df["close"].shift(lookback_days) + 1e-9
+    y_pred_majority = pd.Series(
+        majority_class,
+        index=y_true.index
     )
+
+    majority_results = evaluate_predictions(
+        y_true,
+        y_pred_majority,
+        title="Majority Class Baseline"
+    )
+
+    # 2. Momentum Baseline
+
+    # Take enough previous data to calculate momentum for
+    # the first rows of each ticker in eval_df
+    history_tail = (
+        history_df
+        .sort_values(["ticker", "date"])
+        .groupby("ticker", group_keys=False)
+        .tail(lookback_days)
+        [["ticker", "date", "close"]]
+        .copy()
+    )
+
+    history_tail["_is_eval"] = False
+    history_tail["_row_id"] = -1
+
+    eval_prices = eval_df[
+        ["ticker", "date", "close"]
+    ].copy()
+
+    eval_prices["_is_eval"] = True
+    eval_prices["_row_id"] = np.arange(len(eval_prices))
+
+    combined = pd.concat(
+        [history_tail, eval_prices],
+        ignore_index=True
+    )
+
+    combined = combined.sort_values(
+        ["ticker", "date"]
+    ).reset_index(drop=True)
+
+    previous_close = (
+        combined
+        .groupby("ticker")["close"]
+        .shift(lookback_days)
+    )
+
+    past_return = (
+        combined["close"] - previous_close
+    ) / (previous_close + 1e-9)
+
     flat_threshold = 0.0075
 
     conditions = [
         past_return > flat_threshold,
         past_return < -flat_threshold,
     ]
+
     choices = [1, -1]
-    y_pred_momentum = pd.Series(
-        np.select(conditions, choices, default=0), index=val_df.index
+
+    combined["momentum_prediction"] = np.select(
+        conditions,
+        choices,
+        default=0
     )
 
-    evaluate_predictions(
-        y_true, y_pred_momentum, title=f"{lookback_days}-Day Momentum Baseline"
+    eval_predictions = (
+        combined[combined["_is_eval"]]
+        .sort_values("_row_id")
     )
+
+    y_pred_momentum = pd.Series(
+        eval_predictions["momentum_prediction"].to_numpy(),
+        index=y_true.index
+    )
+
+    momentum_results = evaluate_predictions(
+        y_true,
+        y_pred_momentum,
+        title=f"{lookback_days}-Day Momentum Baseline"
+    )
+
+    return {
+        "majority": majority_results,
+        "momentum": momentum_results,
+    }
+
+    

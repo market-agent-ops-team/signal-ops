@@ -6,16 +6,22 @@ import pandas as pd
 from xgboost import XGBClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import classification_report, accuracy_score, f1_score
+from sklearn.utils.class_weight import compute_sample_weight
 
 # Canonical feature list from Week 2 indicators
 FEATURE_COLS = [
     "dist_ema_21",
     "dist_sma_50",
+    "rsi_14",
     "macd_hist",
     "bb_width",
     "bb_pct",
     "vol_ratio",
     "obv_divergence",
+    "return_1d",
+    "return_3d",
+    "return_5d",
+    "volatility_5d",
 ]
 
 TARGET_COL = "target"
@@ -66,9 +72,15 @@ def train_xgboost(
         early_stopping_rounds=30,
     )
 
+    sample_weights = compute_sample_weight(
+        class_weight="balanced",
+        y=y_train
+    )
+
     model.fit(
         X_train,
         y_train,
+        sample_weight=sample_weights,
         eval_set=[(X_train, y_train), (X_val, y_val)],
         verbose=False,
     )

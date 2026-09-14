@@ -67,6 +67,18 @@ def build_indicators_for_ticker(
     df["ema_21"] = df["close"].ewm(span=21, adjust=False).mean()
     df["sma_50"] = df["close"].rolling(window=50).mean()
 
+    #1,3,5 day return 
+    df["return_1d"] = df["close"].pct_change(1)
+    df["return_3d"] = df["close"].pct_change(3)
+    df["return_5d"] = df["close"].pct_change(5)
+
+    #Short term volitilty
+    df["volatility_5d"] = (
+        df["return_1d"]
+        .rolling(window=5)
+        .std()
+    )
+
     # Trend / Relative Moving Average Ratios (Scale-invariant for ML)
     df["dist_ema_21"] = (df["close"] - df["ema_21"]) / df["ema_21"]
     df["dist_sma_50"] = (df["close"] - df["sma_50"]) / df["sma_50"]
