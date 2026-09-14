@@ -1,4 +1,5 @@
 import logging
+from agents.analyst_agent import format_confidence, normalize_signal
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -11,9 +12,10 @@ SENTIMENT_EMOJI = {
 def build_report(state: dict) -> str:
     ticker = state.get("ticker", "N/A")
     target_date = state.get("target_date", "N/A")
-    ml_trend = state.get("ml_trend", "N/A")
-    ml_confidence = state.get("ml_confidence", 0.0)
-    news_sentiments = state.get("news_sentiments", "neutral")
+    ml_trend = normalize_signal(state.get("ml_trend"))
+    ml_confidence = state.get("ml_confidence")
+    news_status = state.get("news_status", "unavailable")
+    news_sentiments = normalize_signal(state.get("news_sentiments")) if news_status == "available" else "not observed"
     news_items = state.get("news_items", [])
     divergence_flag = state.get("divergence_flag", False)
     analyst_reasoning = state.get("analyst_reasoning", "")
@@ -26,10 +28,11 @@ def build_report(state: dict) -> str:
 
     report += f"""## Technical Signal
 - **Model Prediction:** {ml_trend.upper()}
-- **Confidence:** {ml_confidence * 100:.1f}%
+- **Confidence:** {format_confidence(ml_confidence)}
 """
 
     report += f"""## News & Sentiment
+- **Data Status:** {news_status}
 - **Overall Sentiment:** {news_sentiments.upper()}
 """
 
@@ -48,7 +51,11 @@ def build_report(state: dict) -> str:
 
     report += "---\n\n"
 
-    if divergence_flag:
+    if news_status == "unavailable":
+        report += "## News Unavailable\n> News could not be retrieved; signal comparison is unavailable.\n"
+    elif news_status == "empty":
+        report += "## No Relevant News\n> No relevant articles were returned; sentiment was not observed.\n"
+    elif divergence_flag:
         report += f"""## Signal Divergence Detected
 > Model predicts **{ml_trend.upper()}** but news sentiment is **{news_sentiments.upper()}**.
 """
@@ -58,10 +65,12 @@ def build_report(state: dict) -> str:
 """
         else:
             report += "*No analyst commentary available.*\n\n"
-    else:
+    elif ml_trend == news_sentiments and ml_trend in ("bullish", "bearish"):
         report += """## Signals Aligned
 > Model prediction and news sentiment are consistent. No divergence detected.
 """
+    else:
+        report += "## No Directional Alignment\n> No direct bullish-versus-bearish divergence; neutral signals do not establish directional agreement.\n"
 
     report += """---
 ## Disclaimer

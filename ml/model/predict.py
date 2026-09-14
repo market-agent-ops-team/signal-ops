@@ -1,5 +1,7 @@
 from functools import lru_cache
+from datetime import date
 from pathlib import Path
+import re
 from typing import TypedDict
 
 import joblib
@@ -7,7 +9,7 @@ import numpy as np
 import pandas as pd
 
 from ml.dataProcessing.data_fetch import pick_OHLCV
-from ml.features.indicators import generate_inference_features
+from ml.features.indicators import V1_HISTORY_START, generate_inference_features
 
 
 class TrendPrediction(TypedDict):
@@ -50,22 +52,21 @@ def predict_trend(
     if not ticker:
         raise ValueError("ticker must not be empty")
 
+    if not isinstance(target_date, str) or not re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}", target_date):
+        raise ValueError("target_date must be a valid YYYY-MM-DD date")
     try:
-        target = pd.Timestamp(target_date)
-    except Exception as exc:
+        target = pd.Timestamp(date.fromisoformat(target_date))
+    except ValueError as exc:
         raise ValueError(
-            "target_date must be a valid date"
+            "target_date must be a valid YYYY-MM-DD date"
         ) from exc
-
-    # Fetch enough history for 50-day SMA and other indicators.
-    start = target - pd.Timedelta(days=180)
 
     # yfinance treats end date as exclusive.
     end = target + pd.Timedelta(days=1)
 
     raw = pick_OHLCV(
         ticker,
-        start.strftime("%Y-%m-%d"),
+        V1_HISTORY_START,
         end.strftime("%Y-%m-%d"),
     )
 

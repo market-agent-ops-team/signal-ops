@@ -1,4 +1,5 @@
-from typing import List, Dict, TypedDict
+from typing import Any
+from typing_extensions import TypedDict
 
 from langgraph.graph import StateGraph, END, START
 
@@ -8,15 +9,16 @@ from agents.editor_agent import editor_node
 from ml.model.predict import predict_trend
 
 
-class MarketState(TypedDict):
+class MarketState(TypedDict, total=False):
     ticker: str
     target_date: str
 
     ml_trend: str
     ml_confidence: float
 
-    news_items: List[Dict[str, str]]
-    news_sentiments: str
+    news_items: list[dict[str, Any]]
+    news_sentiments: str | None
+    news_status: str
 
     divergence_flag: bool
     analyst_reasoning: str

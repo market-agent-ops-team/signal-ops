@@ -1,4 +1,5 @@
 import logging
+import math
 from collections.abc import Mapping
 from typing import Any
 
@@ -39,7 +40,9 @@ def format_confidence(confidence: Any) -> str:
         value = float(confidence)
     except (TypeError, ValueError):
         return "unknown confidence"
-    return f"{min(max(value, 0.0), 1.0) * 100:.1f}% confidence"
+    if not math.isfinite(value) or not 0 <= value <= 1:
+        return "unknown confidence"
+    return f"{value * 100:.1f}% confidence"
 
 
 def generate_analyst_reasoning(
@@ -47,10 +50,17 @@ def generate_analyst_reasoning(
     ml_confidence: Any,
     news_sentiment: Any,
     divergence_flag: bool,
+    news_status: str = "available",
 ) -> str:
     model_signal = normalize_signal(ml_trend)
     news_signal = normalize_signal(news_sentiment)
     confidence = format_confidence(ml_confidence)
+
+    if news_status != "available":
+        return (
+            f"The model is {model_signal} ({confidence}). News data is {news_status}; "
+            "no observed news sentiment is available for comparison."
+        )
 
     if divergence_flag:
         return (
@@ -69,12 +79,14 @@ def analyst_node(state: Mapping[str, Any]) -> dict[str, Any]:
     ml_trend = state.get("ml_trend")
     ml_confidence = state.get("ml_confidence")
     news_sentiment = state.get("news_sentiments")
-    divergence_flag = detect_divergence(ml_trend, news_sentiment)
+    news_status = state.get("news_status", "unavailable")
+    divergence_flag = news_status == "available" and detect_divergence(ml_trend, news_sentiment)
     analyst_reasoning = generate_analyst_reasoning(
         ml_trend,
         ml_confidence,
         news_sentiment,
         divergence_flag,
+        news_status,
     )
 
     logger.info(
