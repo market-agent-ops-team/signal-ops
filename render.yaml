@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: signal-ops
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: signal-ops-cache
+          property: connectionString
+      - key: CACHE_TTL_SECONDS
+        value: 900
+      - key: NEWS_API_KEY
+        sync: false
+
+  - type: keyvalue
+    name: signal-ops-cache
+    plan: free

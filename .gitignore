@@ -7,6 +7,15 @@ venv/
 # Python cache
 __pycache__/
 *.pyc
+.pytest_cache/
+.pyrefly_cache/
+.ipynb_checkpoints/
+
+ml/candidate_models/
+
+*.log
+.DS_Store
 
 # IDEs
 .vscode/
+node_modules/

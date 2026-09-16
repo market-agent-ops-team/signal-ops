@@ -1,0 +1,28 @@
+{% if errors %}
+<section class="error-summary" aria-labelledby="error-heading" tabindex="-1" autofocus>
+  <h2 id="error-heading">Check your inputs</h2>
+  <ul>{% for field, message in errors.items() %}<li><a href="#{{ field }}">{{ 'Target date' if field == 'target_date' else 'Ticker' }}: {{ message }}</a></li>{% endfor %}</ul>
+</section>
+{% endif %}
+<form action="/report" method="get" class="analysis-form" aria-labelledby="form-heading">
+  <div class="section-label"><span class="mono">01 / Research inputs</span><span class="square" aria-hidden="true"></span></div>
+  <h2 id="form-heading">Read the signals.</h2>
+  <p class="muted form-intro">Choose an NSE ticker and an as-of date.</p>
+  <div class="form-fields">
+    <div>
+      <label for="ticker">Ticker symbol</label>
+      <input id="ticker" name="ticker" type="text" value="{{ ticker }}" placeholder="e.g. INFY" required autocomplete="off" spellcheck="false" list="ticker-suggestions" aria-describedby="ticker-hint{% if errors.get('ticker') %} ticker-error{% endif %}"{% if errors.get('ticker') %} aria-invalid="true"{% endif %}>
+      <datalist id="ticker-suggestions">{% for symbol, company in ticker_suggestions %}<option value="{{ symbol }}">{{ company }}</option>{% endfor %}</datalist>
+      <p id="ticker-hint" class="hint">Start typing to see NSE symbols; .NS is optional.</p>
+      {% if errors.get('ticker') %}<p id="ticker-error" class="field-error">{{ errors.ticker }}</p>{% endif %}
+    </div>
+    <div>
+      <label for="target_date">Target date</label>
+      <input id="target_date" name="target_date" type="date" value="{{ target_date }}" min="{{ date_min }}" max="{{ date_max }}" required aria-describedby="date-hint{% if errors.get('target_date') %} date-error{% endif %}"{% if errors.get('target_date') %} aria-invalid="true"{% endif %}>
+      <p id="date-hint" class="hint">Pick a completed trading day, {{ date_min }} or later. The model predicts the 3 days after this date — pick today for the near future.</p>
+      {% if errors.get('target_date') %}<p id="date-error" class="field-error">{{ errors.target_date }}</p>{% endif %}
+    </div>
+  </div>
+  <button class="button primary" type="submit">Generate report <span aria-hidden="true">↗</span></button>
+  <p class="hint wait-notice">Analysis can take a moment while market data and news are retrieved. Your report opens when it is ready.</p>
+</form>

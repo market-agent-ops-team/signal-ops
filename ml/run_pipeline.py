@@ -1,6 +1,8 @@
+from pathlib import Path
+
 from ml.dataProcessing.data_fetch import fetch_grp
 from ml.dataProcessing.data_preprocessing import drop_badtickers, small_gap_skip, chronological_split ,purge_split_boundary
-from ml.features.indicators import generate_feature_dataset
+from ml.features.indicators import V1_HISTORY_START, generate_feature_dataset
 from ml.model.evaluate import run_baselines , evaluate_xgboost
 from ml.model.train import prepare_tensors, train_xgboost ,FEATURE_COLS ,save_artifacts
 
@@ -8,7 +10,7 @@ if __name__ == "__main__":
     tickers = ["INFY", "TCS", "WIPRO", "HCLTECH"]
 
     # 1. Fetch & Quality Checks
-    raw_data, reports = fetch_grp(tickers, "2020-01-01", "2024-01-01")
+    raw_data, reports = fetch_grp(tickers, V1_HISTORY_START, "2024-01-01")
     clean = drop_badtickers(raw_data, reports)
     clean = small_gap_skip(clean)
 
@@ -43,7 +45,7 @@ if __name__ == "__main__":
     baseline_results = run_baselines(
         train_df=train_df,
         eval_df=test_df,
-        history_df=val_df,
+        history_df=clean,
         lookback_days=3
     )
 
@@ -53,6 +55,9 @@ if __name__ == "__main__":
         y_test
     )
 
+    validation_baselines = run_baselines(train_df, val_df, clean)
+    validation_results = evaluate_xgboost(model, X_val, y_val)
+
     print("\nTraining Target Distribution:")
     print(train_df["target"].value_counts(normalize=True).sort_index().round(3))
 
@@ -61,13 +66,6 @@ if __name__ == "__main__":
 
     print("\nTest Target Distribution:")
     print(test_df["target"].value_counts(normalize=True).sort_index().round(3))
-
-    model = train_xgboost(
-        X_train,
-        y_train,
-        X_val,
-        y_val
-    )
 
     print("\nXGBoost Best Iteration:", model.best_iteration)
     print("XGBoost Best Score:", model.best_score)
@@ -87,5 +85,10 @@ if __name__ == "__main__":
 
     save_artifacts(
         model,
-        scaler
+        scaler,
+        output_dir=str(Path(__file__).resolve().parent / "candidate_models"),
+        metrics={
+            "validation": {**validation_baselines, "xgboost": validation_results},
+            "test": {**baseline_results, "xgboost": xgb_results},
+        },
     )

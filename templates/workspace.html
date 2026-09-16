@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="hero">
+  <div class="eyebrow mono"><span>Independent inputs. One considered view.</span><span>NSE / Indian equities</span></div>
+  <div class="hero-grid"><div><h1>Signals.</h1><p class="hero-deck">Price tells one story.<br>Headlines tell another.</p></div><div class="hero-aside"><span class="square large-square" aria-hidden="true"></span><p>Bring technical direction and news sentiment into the same frame. See where they agree. Look closer where they don’t.</p><a class="text-link" href="#research">Start your research <span aria-hidden="true">↓</span></a></div></div>
+</section>
+<section id="research" class="research-grid">
+  <div>{% include 'includes/analysis_form.html' %}</div>
+  <aside class="research-note"><span class="mono">A research instrument</span><h2>Direction.<br>Context.<br>Perspective.</h2><p>One report brings together a three-day model signal, recent news sentiment, and an explanation of their relationship.</p><dl class="spec-list"><div><dt>Model</dt><dd>XGBoost · 3 classes</dd></div><div><dt>News</dt><dd>NewsAPI + VADER</dd></div><div><dt>Universe studied</dt><dd>INFY / TCS / WIPRO / HCLTECH</dd></div></dl><p class="hint">Other NSE tickers may be requested, but the documented V1 evaluation covers these four stocks. Data availability varies.</p></aside>
+</section>
+{% include 'includes/evaluation.html' %}
+<section class="section-block"><div class="section-heading"><div><span class="mono">02 / Inside the report</span><h2>From inputs to interpretation.</h2></div><a class="text-link" href="/methodology">Explore the method <span aria-hidden="true">↗</span></a></div><div class="process-grid"><div><span class="step-number mono">01</span><h3>Technical direction</h3><p class="muted">Twelve price and volume features produce a bullish, neutral, or bearish signal with a model probability.</p></div><div><span class="step-number mono">02</span><h3>News in context</h3><p class="muted">Relevant company headlines from a seven-day window are scored for sentiment. Missing news stays explicitly missing.</p></div><div><span class="step-number mono">03</span><h3>A considered reading</h3><p class="muted">The analyst flags opposing directional signals. The editor turns the research into a readable report.</p></div></div></section>
+<section class="section-block"><div class="section-heading"><div><span class="mono">03 / Before you begin</span><h2>See how a report reads.</h2></div><a class="text-link" href="/examples">All examples <span aria-hidden="true">↗</span></a></div><p class="section-intro muted">Three deterministic fixtures, generated offline. Illustrations of the format, not live market calls or evidence of performance.</p>{% include 'includes/example_list.html' %}</section>
+{% endblock %}

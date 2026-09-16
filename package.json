@@ -1,0 +1,16 @@
+{
+  "name": "signal-ops-styles",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build:css": "tailwindcss -i ./static/css/source.css -o ./static/css/app.css --minify && node scripts/copy-fonts.mjs",
+    "build": "npm run build:css"
+  },
+  "devDependencies": {
+    "@fontsource-variable/jetbrains-mono": "5.3.0",
+    "@fontsource-variable/playfair-display": "5.3.0",
+    "@fontsource-variable/source-serif-4": "5.3.0",
+    "@tailwindcss/cli": "4.3.3",
+    "tailwindcss": "4.3.3"
+  }
+}
