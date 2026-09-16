@@ -19,3 +19,7 @@ ml/candidate_models/
 # IDEs
 .vscode/
 node_modules/
+
+# Removed internal docs (purged from public history)
+DESIGN.md
+IMPLEMENTATION.md
