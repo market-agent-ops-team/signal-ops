@@ -1,0 +1,6 @@
+{% extends 'base.html' %}
+{% block content %}
+<header class="page-heading"><span class="mono">Research desk / Attention needed</span><h1>{{ title }}<span class="square" aria-hidden="true"></span></h1><p class="lead">{{ message }}</p>{% if retry and not errors %}<p class="muted">Try another completed trading day or retry when the data or service is available.</p>{% endif %}</header>
+{% if retry %}<div class="error-form">{% include 'includes/analysis_form.html' %}</div>{% endif %}
+<div class="error-actions"><a class="text-link" href="/">← Back to workspace</a><a class="text-link" href="/examples">Read an offline example ↗</a></div>
+{% endblock %}

@@ -1,0 +1,6 @@
+{% extends 'base.html' %}
+{% block content %}
+<header class="page-heading"><span class="mono">The reading room / 03 fixtures</span><h1>Example reports<span class="square" aria-hidden="true"></span></h1><p class="lead">Three ways the signals can meet.</p><p class="muted measure">Explore bullish alignment, bearish alignment, and divergence. Every report here is a deterministic fixture generated offline without live market or news calls.</p></header>
+{% include 'includes/example_list.html' %}
+<section class="reading-note section-block"><span class="mono">A note on interpretation</span><h2>Agreement is not a guarantee.</h2><p class="measure">Aligned inputs do not establish that a trade will succeed. Conflicting inputs invite closer investigation. The examples demonstrate report structure and signal semantics; their confidence values are fixture inputs, not measured model performance.</p><a class="button primary" href="/">Build your own report <span aria-hidden="true">↗</span></a></section>
+{% endblock %}

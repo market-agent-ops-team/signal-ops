@@ -9,5 +9,5 @@ __pycache__
 .env
 *.ipynb
 notebooks
-reports
+node_modules
 ml/candidate_models
