@@ -18,3 +18,4 @@ ml/candidate_models/
 
 # IDEs
 .vscode/
+node_modules/

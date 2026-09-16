@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block content %}
+<header class="page-heading report-heading">
+  <a class="text-link" href="{{ '/examples' if fixture else '/' }}">← {{ 'All example reports' if fixture else 'Workspace' }}</a>
+  <p class="mono">{{ 'Offline fixture / Not a live analysis' if fixture else 'Research report / V1' }}</p>
+  <h1>{{ fixture.title if fixture else ticker }}<span class="square" aria-hidden="true"></span></h1>
+  {% if fixture %}<p class="lead">{{ fixture.description }}</p><p class="fixture-notice">Deterministic fixture. Generated offline without live market or news calls. The values below illustrate the report format.</p>{% else %}<p class="lead">As of {{ target_date }} <span class="muted">/ predicts the next 3 days</span></p><p class="hint">Uses the same analysis and 900-second default Redis cache as the JSON API. This is an as-of request, not a guaranteed historical news archive.</p>{% endif %}
+</header>
+{% if result %}
+<section class="signal-summary" aria-label="Research summary"><div><span class="mono">Technical direction</span><strong>{{ result.ml_trend | capitalize }}</strong><p>{{ '%.1f' | format(result.ml_confidence * 100) }}% model probability</p></div><div><span class="mono">News sentiment</span><strong>{{ result.news_sentiment | capitalize if result.news_sentiment else 'Not observed' }}</strong><p>Status: {{ result.news_status }}</p></div><div><span class="mono">Signal relationship</span><strong>{{ 'Divergence' if result.divergence_flag else 'Aligned' if result.news_status == 'available' and result.ml_trend == result.news_sentiment and result.ml_trend != 'neutral' else 'No directional alignment' }}</strong><p>{{ 'Opposing directions need review.' if result.divergence_flag else 'Read the reasoning below.' }}</p></div></section>
+{% endif %}
+<div class="report-layout"><article class="report-prose" aria-label="Full analysis report">{{ report_html | safe }}</article><aside class="report-sidebar">
+  {% if result %}<section><span class="mono">The analyst’s reading</span><h2>In perspective.</h2><p>{{ result.analyst_reasoning }}</p></section>{% endif %}
+  <section><span class="mono">Reading the signal</span><h2>Context matters.</h2><p>Confidence is the highest model class probability. It is not a promised return or a verified chance of making a profitable trade.</p><p>Unavailable or empty news is not neutral sentiment. Neutral combinations do not imply directional agreement.</p><a class="text-link" href="/methodology">Methodology & limitations ↗</a></section>
+  <details><summary>Save a copy</summary><p>Use your browser’s Print command to print this report or save it as a PDF. Navigation and input controls are removed in the print layout.</p></details>
+</aside></div>
+{% if result %}<section class="rerun section-block"><div><span class="mono">Continue the research</span><h2>A different date.<br>A different perspective.</h2><p class="muted">Change either input to run another analysis.</p></div><div>{% include 'includes/analysis_form.html' %}</div></section>{% else %}<section class="section-block"><h2>Read another scenario.</h2>{% include 'includes/example_list.html' %}</section>{% endif %}
+{% endblock %}

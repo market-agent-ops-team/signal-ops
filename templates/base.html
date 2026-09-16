@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en"{% if theme != 'system' %} data-theme="{{ theme }}"{% endif %}>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Stock direction and news sentiment, presented together. A transparent V1 research workspace for Indian equities.">
+  <title>{{ title }} — Signal Ops</title>
+  <link rel="icon" href="{{ url_for('static', path='favicon.svg') }}" type="image/svg+xml">
+  <link rel="stylesheet" href="{{ url_for('static', path='css/app.css') }}">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div class="shell">
+    <header class="site-header">
+      <a class="wordmark" href="/" aria-label="Signal Ops workspace"><span class="square" aria-hidden="true"></span> SIGNAL OPS</a>
+      <nav aria-label="Main navigation" class="main-nav">
+        <a href="/"{% if active == 'workspace' %} aria-current="page"{% endif %}>Workspace</a>
+        <a href="/examples"{% if active == 'examples' %} aria-current="page"{% endif %}>Examples</a>
+        <a href="/methodology"{% if active == 'methodology' %} aria-current="page"{% endif %}>Methodology</a>
+      </nav>
+      <span class="edition mono">Research edition / V1</span>
+    </header>
+    <main id="main" tabindex="-1">{% block content %}{% endblock %}</main>
+    <footer class="site-footer">
+      <div><a class="wordmark" href="/">SIGNAL OPS<span class="square" aria-hidden="true"></span></a><p class="muted">A clearer view of conflicting signals.</p></div>
+      <form action="/theme" method="post" class="theme-form">
+        <input type="hidden" name="return_to" value="{{ return_to }}">
+        <fieldset><legend class="mono">Appearance</legend><div class="theme-buttons">
+          {% for value in ['light', 'dark', 'system'] %}<button type="submit" name="theme" value="{{ value }}" aria-pressed="{{ 'true' if theme == value else 'false' }}">{{ value | capitalize }}</button>{% endfor %}
+        </div></fieldset>
+      </form>
+      <p class="footer-note muted">Automated research, not financial advice.<br>Read the evidence. Make your own assessment.</p>
+    </footer>
+  </div>
+</body>
+</html>

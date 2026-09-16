@@ -1,0 +1,5 @@
+<div class="example-list">
+  {% for slug, entry in examples.items() %}
+  <a href="/examples/{{ slug }}" class="example-link"><span class="mono">{{ entry.number }} / Fixture</span><h3>{{ entry.title }}</h3><p class="muted">{{ entry.description }}</p><span class="mono example-action">Read example <span aria-hidden="true">↗</span></span></a>
+  {% endfor %}
+</div>

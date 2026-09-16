@@ -1,4 +1,6 @@
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+from api.frontend import ROOT, router as frontend_router
 from api.routes import router
 
 app = FastAPI(
@@ -9,6 +11,8 @@ app = FastAPI(
 
 
 app.include_router(router)
+app.include_router(frontend_router)
+app.mount("/static", StaticFiles(directory=ROOT / "static"), name="static")
 
 if __name__ == "__main__":
     import uvicorn
